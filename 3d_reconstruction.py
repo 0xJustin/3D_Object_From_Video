@@ -14,13 +14,13 @@ import os
 import glob
 import argparse
 import matplotlib
-from keras.models import load_model
-from matplotlib import pyplot as plt
 
+# Keras / TensorFlow
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '5'
+from keras.models import load_model
 from layers import BilinearUpSampling2D
 from utils import predict, load_images, display_images
-
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '5'
+from matplotlib import pyplot as plt
 
 def images_from_video(vid_path):
     images = []
@@ -73,7 +73,9 @@ def depth_estimation(images):
     #inputs = load_images( glob.glob('data/random_car_2.jpg') )
     inputs = np.array(images)
 
+    print('Running model...')
     outputs = predict(model, inputs)
+    print('Done.')
 
     return outputs
 
@@ -81,13 +83,12 @@ def main():
     vid_path = 'data/video1.mp4'
     images = images_from_video(vid_path)
     
-    image_size = (640, 480)
-    num_img_samples = 10
-    image_samples = [images[int(len(images)*i/num_img_samples)] for i in range(num_img_samples)]
-    resized_images = [cv2.resize(image, image_size) for image in image_samples]
-    depth_images = depth_estimation(resized_images)
+    num_depth_img_samples = 5
+    image_samples = [images[int(len(images)*i/num_depth_img_samples)] for i in range(num_depth_img_samples)]
+    resized_image_samples = [cv2.resize(image, (640, 480)) for image in image_samples]
+    depth_images = depth_estimation(resized_image_samples)
 
-    for i in range(num_img_samples):
+    for i in range(num_depth_img_samples):
         cv2.imshow('image', cv2.resize(image_samples[i], (320, 240)))
         cv2.waitKey(0)
         cv2.imshow('image', depth_images[i])
