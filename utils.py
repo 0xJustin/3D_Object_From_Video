@@ -142,3 +142,25 @@ def evaluate(model, rgb, depth, crop, batch_size=6, verbose=False):
         print("{:10.4f}, {:10.4f}, {:10.4f}, {:10.4f}, {:10.4f}, {:10.4f}".format(e[0],e[1],e[2],e[3],e[4],e[5]))
 
     return e
+
+def convert_to_base_frame(pointcloud, transforms, start_index, desired_index):
+    # Transforming pointcloud to pose of desired frame
+    # pointcloud - Nx3 matrix of points
+    # transforms - list of 3x3 essential matrices relating the 3d points in one frame to the next
+        # it is important that this is sequential and indexed by frame ie: transforms[2] is the transform from frame 2->3
+    # start_index - the frame # of pose to be transformed
+    # desired_index - the frame to be transformed into
+    # Returns - a pointcloud in the new frame and the resultant transform
+    transform = transforms[start_index]
+    if desired_index == start_index:
+        pass
+    elif desired_index > start_index:
+        for idx in range(start_index + 1, desired_index):
+            transform *= transforms[idx]
+    else:
+        transform = np.linalg.inv(transform)
+        for idx in range(start_index - 1, desired_index, -1):
+            transform *= np.linalg.inv(transforms[idx])
+    
+    new_cloud = pointcloud @ transform
+    return new_cloud, transform
