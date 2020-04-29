@@ -126,7 +126,6 @@ def find_matches(kp1, kp2, des1, des2):
 
     return good_pts1, good_pts2
 
-
 # Testing methods ------------------------------------------------------------
 def test_main():
     mask = np.load('C:/Users/garre/Downloads/mask_thresh_marine.npy')
