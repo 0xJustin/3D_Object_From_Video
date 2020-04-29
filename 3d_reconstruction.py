@@ -14,6 +14,8 @@ import os
 import glob
 import argparse
 import matplotlib
+import time
+import imutils
 
 # Keras / TensorFlow
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '5'
@@ -78,6 +80,12 @@ def depth_estimation(images):
     print('Done.')
 
     return outputs
+
+def segmentation(images):
+    segmented_images = images
+    
+    return segmented_images
+    
 
 def main():
     vid_path = 'data/video1.mp4'
