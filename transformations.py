@@ -8,22 +8,21 @@ import cv2
 import time
 import scipy.linalg
 
-def transforms(images, masks=None):
-    '''Takes in a list of images and their respective masks.
-        Can change to arrays too
+def transforms(images, masks):
+    '''Takes in a list of images and an array of their respective masks.
 
     Args:
         - images (List of 2D unit8 arrays): List of sequential grayscale images
-        - masks (List of 2D binary arrays): List of sequential masks
+        - masks (3D rxcxN binary array): Array of masks for N frames
 
     Returns:
-        - tfs (3D 4x4xN float array): each 4x4 is the homogenous transformation
-        between the neighboring images. Ex. tfs[:,:,1] is the transformation
+        - tfs (3D Nx4x4 float array): each 4x4 is the homogenous transformation
+        between the neighboring images. Ex. tfs[i,:,:] is the transformation
         [R t; 0 0 0 1] such that it's the change of basis from frame 1 to frame2
 
     '''
     # preallocate
-    tfs = np.zeros([4,4,len(images)-1])
+    tfs = np.zeros([len(images)-1,4,4])
 
     for i in range(len(images)-1):
         frame1 = images[i]
@@ -32,7 +31,7 @@ def transforms(images, masks=None):
         mask2 = masks[i+1]
 
         # Find transformation between frames
-        tfs[:,:,i]= compute_tf(frame1, frame2, mask1, mask2)
+        tfs[i,:,:]= compute_tf(frame1, frame2, mask1, mask2)
 
     return tfs
 
@@ -86,6 +85,7 @@ def compute_tf(gray_img1, gray_img2, mask1=None, mask2=None):
 
     # Recover the homogenous transformation
     points, R, t, mask = cv2.recoverPose(E,matches1, matches2, K)
+
     tf = np.hstack((R,t.reshape(-1,1)))
     tf = np.vstack((tf,np.array([0, 0, 0, 1]).reshape(1,-1)))
 
@@ -129,6 +129,9 @@ def find_matches(kp1, kp2, des1, des2):
 
 # Testing methods ------------------------------------------------------------
 def test_main():
+    mask = np.load('C:/Users/garre/Downloads/mask_thresh_marine.npy')
+    print(mask.shape)
+    print(mask.T.shape)
     test_compute_tf()
 
 
@@ -144,11 +147,14 @@ def test_compute_tf():
     gray3 = cv2.imread(img_path2, 0)
 
     images = [gray1, gray2, gray3]
-    masks = [None, None, None]
+    masks = np.array([[None], [None], [None]])
     tf = transforms(images, masks)
 
-    for i in range(tf.shape[2]):
-        print(tf[:,:,i])
+    print(tf[0,:,:])
+    print(tf[1,:,:])
+    print(tf[0])
+
+
 
     #outimg1=cv2.drawKeypoints(gray1,kp1,img1,flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
     #cv2.imwrite('C:/Users/garre/OneDrive - Johns Hopkins University/2020_Spring (M)/test/img1_keypoints.png',outimg1)
