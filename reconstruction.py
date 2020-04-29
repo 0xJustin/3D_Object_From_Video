@@ -16,6 +16,7 @@ import argparse
 import matplotlib
 import time
 import imutils
+import open3d as o3d
 
 # Keras / TensorFlow
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '5'
@@ -23,6 +24,55 @@ from keras.models import load_model
 from layers import BilinearUpSampling2D
 from utils import predict, load_images, display_images
 from matplotlib import pyplot as plt
+
+
+
+
+def pt_cloud_to_file(point_cloud, output_file):
+    
+    if (point_cloud.shape[1] != 3):
+        print(point_cloud.shape)
+        print("error loading point cloud - make sure it is Nx3 np array")
+        return
+
+    
+    pcd = o3d.geometry.PointCloud()
+    pcd.points = o3d.utility.Vector3dVector(point_cloud[:,:3])
+    
+    #uncomment to view point could at this point
+    #o3d.visualization.draw_geometries([pcd])
+    
+    print("Downsample the point cloud with a voxel of 0.05")
+    pcd = pcd.voxel_down_sample(voxel_size=0.05)
+    #o3d.visualization.draw_geometries([downpcd])
+    
+    pcd.estimate_normals(search_param=o3d.geometry.KDTreeSearchParamHybrid(radius=0.1, max_nn=30))
+    #o3d.visualization.draw_geometries([downpcd])
+    
+        
+    distances = pcd.compute_nearest_neighbor_distance()
+    avg_dist = np.mean(distances)
+    radius = 3 * avg_dist
+    
+    print("computing mesh")
+    
+    bpa_mesh = o3d.geometry.TriangleMesh.create_from_point_cloud_ball_pivoting(pcd,o3d.utility.DoubleVector([radius, radius * 2]))
+    
+    #o3d.visualization.draw_geometries([bpa_mesh])
+    print("simplifying mesh")
+    dec_mesh = bpa_mesh.simplify_quadric_decimation(100000)
+    print("simplifying more")
+    dec_mesh.remove_degenerate_triangles()
+    dec_mesh.remove_duplicated_triangles()
+    dec_mesh.remove_duplicated_vertices()
+    dec_mesh.remove_non_manifold_edges()
+    print("saving mesh")
+    o3d.io.write_triangle_mesh(output_file, dec_mesh)
+
+
+
+
+
 
 def images_from_video(vid_path):
     images = []
