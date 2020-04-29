@@ -29,7 +29,6 @@ def transforms(images, masks):
         frame2 = images[i+1]
         mask1 = masks[i]
         mask2 = masks[i+1]
-
         # Find transformation between frames
         tfs[i,:,:]= compute_tf(frame1, frame2, mask1, mask2)
 
@@ -59,7 +58,6 @@ def compute_tf(gray_img1, gray_img2, mask1=None, mask2=None):
     ppy = int(gray_img1.shape[0]) / 2
     # intrinsic parameter matrix
     K = np.array([[f*ppmm, 0, ppx],[0, f*ppmm, ppy],[0,0,1]])
-
     # SIFT keypoints and descriptors for each masked image
     sift = cv2.xfeatures2d.SIFT_create()
     kp1, des1 = sift.detectAndCompute(gray_img1, None)
