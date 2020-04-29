@@ -81,90 +81,71 @@ def depth_estimation(images):
 
     return outputs
 
-def segmentation(image):
-    
+def segmentation(images):  
     # load the class label names
     CLASSES = open("enet-cityscapes/enet-classes.txt").read().strip().split("\n")
     
-    # initialize a list of colors to represent each class label in
-    # the mask (starting with 'black' for the background/unlabeled
-    # regions)
+    # initialize a list of colors to represent each class label in mask
     np.random.seed(42)
     COLORS = np.random.randint(0, 255, size=(len(CLASSES) - 1, 3),
     	dtype="uint8")
     COLORS = np.vstack([[0, 0, 0], COLORS]).astype("uint8")
     
-    # initialize the legend visualization
-    legend = np.zeros(((len(CLASSES) * 25) + 25, 300, 3), dtype="uint8")
-    
-    # loop over the class names + colors
-    for (i, (className, color)) in enumerate(zip(CLASSES, COLORS)):
-    	# draw the class name + color on the legend
-    	color = [int(c) for c in color]
-    	cv2.putText(legend, className, (5, (i * 25) + 17),
-    		cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
-    	cv2.rectangle(legend, (100, (i * 25)), (300, (i * 25) + 25),
-    		tuple(color), -1)
-    
     # load our serialized model from disk
     print("[INFO] loading model...")
     net = cv2.dnn.readNet("enet-cityscapes/enet-model.net")
-    
-    # load the input image, resize it, and construct a blob from it,
-    # but keeping mind mind that the original input image dimensions
-    # ENet was trained on was 1024x512
+
     image_width = 500
-    #image = cv2.imread("data/random_car_2.jpg")
-    image = imutils.resize(image, width=image_width)
-    blob = cv2.dnn.blobFromImage(image, 1 / 255.0, (1024, 512), 0,
-    	swapRB=True, crop=False)
+    masks = []
+
+    print("[INFO] segmenting images")
+    for image in images:
+        image = imutils.resize(image, width=image_width)
+        blob = cv2.dnn.blobFromImage(image, 1 / 255.0, (1024, 512), 0,
+        	swapRB=True, crop=False)
+        
+        # perform a forward pass using the segmentation model
+        net.setInput(blob)
+        start = time.time()
+        output = net.forward()
+        end = time.time()
+        #print("[INFO] inference took {:.4f} seconds".format(end - start))
     
-    # perform a forward pass using the segmentation model
-    net.setInput(blob)
-    start = time.time()
-    output = net.forward()
-    end = time.time()
+        # Get number of classes and dimensions of mask from shape of output array
+        (numClasses, height, width) = output.shape[1:4]
+        # Output class ID map
+        classMap = np.argmax(output[0], axis=0)
+        # given the class ID map, map each of the class IDs to corresponding color
+        mask = COLORS[classMap]
+        
+        # resize the mask and class map such that its dimensions match the
+        # original size of the input image
+        mask = cv2.resize(mask, (image.shape[1], image.shape[0]),
+        	interpolation=cv2.INTER_NEAREST)
+        
+        masks.append(mask)
+        
+    return masks
     
-    # show the amount of time inference took
-    print("[INFO] inference took {:.4f} seconds".format(end - start))
-    
-    # infer the total number of classes along with the spatial dimensions
-    # of the mask image via the shape of the output array
-    (numClasses, height, width) = output.shape[1:4]
-    
-    # our output class ID map will be num_classes x height x width in
-    # size, so we take the argmax to find the class label with the
-    # largest probability for each and every (x, y)-coordinate in the
-    # image
-    classMap = np.argmax(output[0], axis=0)
-    
-    # given the class ID map, we can map each of the class IDs to its
-    # corresponding color
-    mask = COLORS[classMap]
-    
-    # resize the mask and class map such that its dimensions match the
-    # original size of the input image (we're not using the class map
-    # here for anything else but this is how you would resize it just in
-    # case you wanted to extract specific pixels/classes)
-    mask = cv2.resize(mask, (image.shape[1], image.shape[0]),
-    	interpolation=cv2.INTER_NEAREST)
-    
-    return mask
-    
+  
 
 def main():
-    vid_path = 'data/video1.mp4'
+    vid_path = 'data/car_donut.mp4'
     images = images_from_video(vid_path)
     
-    num_depth_img_samples = 5
+    num_depth_img_samples = 50
     image_samples = [images[int(len(images)*i/num_depth_img_samples)] for i in range(num_depth_img_samples)]
-    resized_image_samples = [cv2.resize(image, (640, 480)) for image in image_samples]
-    depth_images = depth_estimation(resized_image_samples)
+    #resized_image_samples = [cv2.resize(image, (640, 480)) for image in image_samples]
+    #depth_images = depth_estimation(resized_image_samples)
+    
+    masks = segmentation(image_samples)
 
     for i in range(num_depth_img_samples):
-        cv2.imshow('image', cv2.resize(image_samples[i], (320, 240)))
-        cv2.waitKey(0)
-        cv2.imshow('image', depth_images[i])
+        #cv2.imshow('image', cv2.resize(image_samples[i], (320, 240)))
+        #cv2.waitKey(0)
+        #cv2.imshow('image', depth_images[i])
+        #cv2.waitKey(0)
+        cv2.imshow('Segmented mask', masks[i])
         cv2.waitKey(0)
 
 if __name__ == '__main__':
