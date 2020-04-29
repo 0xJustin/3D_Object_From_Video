@@ -8,7 +8,7 @@ import cv2
 import time
 import scipy.linalg
 
-def transforms(images, masks):
+def transforms(images, masks=None):
     '''Takes in a list of images and their respective masks.
         Can change to arrays too
 
@@ -22,6 +22,9 @@ def transforms(images, masks):
         [R t; 0 0 0 1] such that it's the change of basis from frame 1 to frame2
 
     '''
+    # preallocate
+    tfs = np.zeros([4,4,len(images)-1])
+
     for i in range(len(images)-1):
         frame1 = images[i]
         frame2 = images[i+1]
@@ -132,12 +135,20 @@ def test_main():
 def test_compute_tf():
     img_path1 = 'C:/Users/garre/OneDrive - Johns Hopkins University/2020_Spring (M)/computervision/hw2/data/graf1.png'
     img_path2 = 'C:/Users/garre/OneDrive - Johns Hopkins University/2020_Spring (M)/computervision/hw2/data/graf2.png'
+    img_path3 = 'C:/Users/garre/OneDrive - Johns Hopkins University/2020_Spring (M)/computervision/hw2/data/graf3.png'
     img1 = cv2.imread(img_path1, cv2.IMREAD_COLOR)
     img2 = cv2.imread(img_path2, cv2.IMREAD_COLOR)
+    img3 = cv2.imread(img_path3, cv2.IMREAD_COLOR)
     gray1 = cv2.imread(img_path1, 0)
     gray2 = cv2.imread(img_path2, 0)
+    gray3 = cv2.imread(img_path2, 0)
 
-    tf = compute_tf(gray1, gray2)
+    images = [gray1, gray2, gray3]
+    masks = [None, None, None]
+    tf = transforms(images, masks)
+
+    for i in range(tf.shape[2]):
+        print(tf[:,:,i])
 
     #outimg1=cv2.drawKeypoints(gray1,kp1,img1,flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
     #cv2.imwrite('C:/Users/garre/OneDrive - Johns Hopkins University/2020_Spring (M)/test/img1_keypoints.png',outimg1)
