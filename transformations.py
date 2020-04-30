@@ -13,7 +13,7 @@ def transforms(images, masks):
 
     Args:
         - images (List of 2D unit8 arrays): List of sequential grayscale images
-        - masks (3D rxcxN binary array): Array of masks for N frames
+        - masks (3D Nxrxc binary array): Array of masks for N frames
 
     Returns:
         - tfs (3D Nx4x4 float array): each 4x4 is the homogenous transformation
@@ -60,8 +60,8 @@ def compute_tf(gray_img1, gray_img2, mask1=None, mask2=None):
     K = np.array([[f*ppmm, 0, ppx],[0, f*ppmm, ppy],[0,0,1]])
     # SIFT keypoints and descriptors for each masked image
     sift = cv2.xfeatures2d.SIFT_create()
-    kp1, des1 = sift.detectAndCompute(gray_img1, None)
-    kp2, des2 = sift.detectAndCompute(gray_img2, None)
+    kp1, des1 = sift.detectAndCompute(gray_img1, mask1)
+    kp2, des2 = sift.detectAndCompute(gray_img2, mask2)
 
     # Find corresponding matches between keypoints
     # matches1 and matches2 are the actual points, not the indices
@@ -123,45 +123,3 @@ def find_matches(kp1, kp2, des1, des2):
             good_pts1.append(kp1[m.queryIdx].pt)
 
     return good_pts1, good_pts2
-
-# Testing methods ------------------------------------------------------------
-def test_main():
-    mask = np.load('C:/Users/garre/Downloads/mask_thresh_marine.npy')
-    print(mask.shape)
-    print(mask.T.shape)
-    test_compute_tf()
-
-
-def test_compute_tf():
-    img_path1 = 'C:/Users/garre/OneDrive - Johns Hopkins University/2020_Spring (M)/computervision/hw2/data/graf1.png'
-    img_path2 = 'C:/Users/garre/OneDrive - Johns Hopkins University/2020_Spring (M)/computervision/hw2/data/graf2.png'
-    img_path3 = 'C:/Users/garre/OneDrive - Johns Hopkins University/2020_Spring (M)/computervision/hw2/data/graf3.png'
-    img1 = cv2.imread(img_path1, cv2.IMREAD_COLOR)
-    img2 = cv2.imread(img_path2, cv2.IMREAD_COLOR)
-    img3 = cv2.imread(img_path3, cv2.IMREAD_COLOR)
-    gray1 = cv2.imread(img_path1, 0)
-    gray2 = cv2.imread(img_path2, 0)
-    gray3 = cv2.imread(img_path2, 0)
-
-    images = [gray1, gray2, gray3]
-    masks = np.array([[None], [None], [None]])
-    tf = transforms(images, masks)
-
-    print(tf[0,:,:])
-    print(tf[1,:,:])
-    print(tf[0])
-
-
-
-    #outimg1=cv2.drawKeypoints(gray1,kp1,img1,flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-    #cv2.imwrite('C:/Users/garre/OneDrive - Johns Hopkins University/2020_Spring (M)/test/img1_keypoints.png',outimg1)
-    #outimg2=cv2.drawKeypoints(gray2,kp2,img2,flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-    #cv2.imwrite('C:/Users/garre/OneDrive - Johns Hopkins University/2020_Spring (M)/test/img2_keypoints.png',outimg2)
-
-
-
-if __name__ == '__main__':
-    tic = time.process_time()       # debugging
-    test_main()
-    toc = time.process_time()       # debugging
-    print('Total computation time = '+str(1000*(toc-tic))+'ms')     # debugging
