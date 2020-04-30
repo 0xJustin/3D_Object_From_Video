@@ -157,11 +157,11 @@ def convert_to_base_frame(pointcloud, transforms, start_index, desired_index):
     elif desired_index > start_index:
         transform = transforms[start_index]
         for idx in range(start_index + 1, desired_index):
-            transform = np.matmul(transforms[idx], transform)
+            transform = np.matmul(transform, transforms[idx])
     else:
-        transform = np.linalg.inv(transform)
+        transform = np.linalg.inv(transforms[start_index])
         for idx in range(start_index - 1, desired_index, -1):
-            transform = np.matmul(np.linalg.inv(transforms[idx]), transform)
+            transform = np.matmul(transform, np.linalg.inv(transforms[idx]))
 
     # homogenous form
     pointcloud = np.hstack((pointcloud,np.ones(pointcloud.shape[0]).reshape(-1,1)))
