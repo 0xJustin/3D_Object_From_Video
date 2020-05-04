@@ -6,8 +6,8 @@ class ImageSequence:
     '''
     Class to hold the necessary information about the image sequence
     '''
-    def __init__(self,filename):
-        self.load_features(filename)
+    def __init__(self,filename,images):
+        self.load_features(filename,images)
 
 
     @property
@@ -30,28 +30,34 @@ class ImageSequence:
     def height(self):
         return self._height
 
-    def load_features(self,filename):
+    def load_features(self,features,images):
         '''
         Method that loads a txt file containing 2D coordinates of image features. The format of each line should be: 
         [x y feature_number image_number image_filename]
         '''
-        features_df=pd.read_csv(filename, delimiter=r"\s+", index_col = False)
+        #features_df=pd.read_csv(filename, delimiter=r"\s+", index_col = False)
+        #print(type(features_df))
         #get length of sequence and number of features
-        self._length=int(features_df['image_id'].max())
-        self._number_of_features=int(features_df['feature_id'].max())
+        #self._length=int(features_df['image_id'].max())
+        #self._number_of_features=int(features_df['feature_id'].max())
+        self._length = features.shape[0]
+        self._number_of_features = features.shape[2]
+        self._feat_2d = features
+        print(self._length)
+        print(self._number_of_features)
 
         #get the 2d features
-        self._feat_2d=np.zeros(shape=[self._length,4,self._number_of_features])
-        for i in range(1,self._length+1):
-            self.feat_2d[i-1,:,:]=np.transpose(features_df.loc[features_df['image_id'] == i].values)[0:4]
+        #self._feat_2d=np.zeros(shape=[self._length,4,self._number_of_features])
+        #for i in range(1,self._length+1):
+        #    self.feat_2d[i-1,:,:]=np.transpose(features_df.loc[features_df['image_id'] == i].values)[0:4]
 
         #keep the image filenames
-        self._image_filenames=features_df.image_filename.unique()
+        #self._image_filenames=features_df.image_filename.unique()
 
         #get the image sequence width and height
-        image = Image.open(self._image_filenames[0])
-        self._width=1024#image.width
-        self._height=768#image.height
+        image = images[0]
+        self._width=image.shape[0]
+        self._height=image.shape[1]
 
     def get_normalized_coordinates(self):
         '''
@@ -64,14 +70,13 @@ class ImageSequence:
         return np.dstack((rows,cols)).swapaxes(1,2)
 
 
-    def show(self):
+    def show(self, images):
         '''
         Method to display the sequence, with the 2D features superimposed
         '''
         #font=ImageFont.truetype('/Library/fonts/arial.ttf', 30)
-        for i in range(0,self.length):
-            filename=self._image_filenames[i]
-            image = Image.open(filename)
+        for i in range(images.shape[0]):
+            image = images[i]
             draw = ImageDraw.Draw(image)
             for j in range(0,self.number_of_features):
                 x=self.feat_2d[i,:,j][0];

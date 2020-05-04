@@ -1,7 +1,7 @@
 '''
 CV Final Project - 3d Reconstruction from video
  Charlie Watkins
- Garret Ung
+ Garrett Ung
  Justin Joyce
  Luke Robinson
  Will David
@@ -17,11 +17,12 @@ import matplotlib
 import time
 import imutils
 import open3d as o3d
+import metric_recon
 
 # Keras / TensorFlow
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '5'
-from keras.models import load_model
-from layers import BilinearUpSampling2D
+#from keras.models import load_model
+#from layers import BilinearUpSampling2D
 from utils import predict, load_images, display_images
 from matplotlib import pyplot as plt
 
@@ -108,7 +109,7 @@ def images_from_video(vid_path):
 
     # close video stream and windows
     cap.release()
-    cv2.destroyAllWindows()
+    #cv2.destroyAllWindows()
 
     return images
 
@@ -118,7 +119,7 @@ def depth_estimation(images):
 
     # Load model
     print('Loading model...')
-    model = load_model("nyu.h5", custom_objects=custom_objects, compile=False)
+    model = load_model("/content/drive/My Drive/Hopkins/Spring 2020 (M)/nyu.h5", custom_objects=custom_objects, compile=False)
     print('Model loaded ({0}).'.format("nyu.h5"))
 
     # Input images
@@ -133,7 +134,7 @@ def depth_estimation(images):
 
 def segmentation(images):  
     # load the class label names
-    CLASSES = open("enet-cityscapes/enet-classes.txt").read().strip().split("\n")
+    CLASSES = open("/content/drive/My Drive/Hopkins/Spring 2020 (M)/enet-cityscapes/enet-classes.txt").read().strip().split("\n")
     
     # initialize a list of colors to represent each class label in mask
     np.random.seed(42)
@@ -143,7 +144,7 @@ def segmentation(images):
     
     # load our serialized model from disk
     print("[INFO] loading model...")
-    net = cv2.dnn.readNet("enet-cityscapes/enet-model.net")
+    net = cv2.dnn.readNet("/content/drive/My Drive/Hopkins/Spring 2020 (M)/enet-cityscapes/enet-model.net")
 
     image_width = 500
     masks = []
@@ -180,16 +181,22 @@ def segmentation(images):
   
 
 def main():
-    vid_path = 'data/car_donut.mp4'
+    vid_path = '/home/garrett/Downloads/storm.mp4'
     images = images_from_video(vid_path)
+    images = np.array(images)
     
-    num_depth_img_samples = 50
-    image_samples = [images[int(len(images)*i/num_depth_img_samples)] for i in range(num_depth_img_samples)]
+    #num_depth_img_samples = 50
+    #image_samples = [images[int(len(images)*i/num_depth_img_samples)] for i in range(num_depth_img_samples)]
     #resized_image_samples = [cv2.resize(image, (640, 480)) for image in image_samples]
     #depth_images = depth_estimation(resized_image_samples)
     
-    masks = segmentation(image_samples)
+    n_images = 8
+    skip = 2        # number of increment of frame
+    image_samples=images[:n_images*skip:skip]
 
+    #masks = segmentation(image_samples)
+
+    '''
     for i in range(num_depth_img_samples):
         #cv2.imshow('image', cv2.resize(image_samples[i], (320, 240)))
         #cv2.waitKey(0)
@@ -197,6 +204,10 @@ def main():
         #cv2.waitKey(0)
         cv2.imshow('Segmented mask', masks[i])
         cv2.waitKey(0)
+    '''
+    features = metric_recon.get_features(image_samples)
+    print(features)
+
 
 if __name__ == '__main__':
   main()
