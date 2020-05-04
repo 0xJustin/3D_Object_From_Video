@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+'''
+    Author: Garrett Ung, gung1@jhu.edu
+'''
 
 import numpy as np
 import cv2
